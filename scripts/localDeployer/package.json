@@ -7,6 +7,6 @@
     },
     "dependencies": {
         "@types/node": "^18.16.3",
-        "viem": "^2.9.5"
+        "viem": "^2.21.4"
     }
 }

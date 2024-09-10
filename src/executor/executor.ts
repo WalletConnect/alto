@@ -47,6 +47,7 @@ import {
     type Transport,
     type WalletClient
 } from "viem"
+import { Authorization } from "viem/experimental"
 import {
     createCompressedCalldata,
     filterOpsAndEstimateGas,
@@ -931,16 +932,6 @@ export class Executor {
 
         let transactionHash: HexData32
         try {
-            const gasOptions = this.legacyTransactions
-                ? {
-                      gasPrice: gasPriceParameters.maxFeePerGas
-                  }
-                : {
-                      maxFeePerGas: gasPriceParameters.maxFeePerGas,
-                      maxPriorityFeePerGas:
-                          gasPriceParameters.maxPriorityFeePerGas
-                  }
-
             const compressedOpsToBundle = opsToBundle.map(
                 ({ mempoolUserOperation }) => {
                     const compressedOp = mempoolUserOperation
@@ -948,8 +939,36 @@ export class Executor {
                 }
             )
 
+            let authorizationList: Authorization[] | undefined = undefined
+            for (const compressedOp of compressedOpsToBundle) {
+                if ("authorizationList" in compressedOp.inflatedOp) {
+                    const opAuthorizationList = compressedOp.inflatedOp.authorizationList
+                    if (opAuthorizationList) {
+                        if (authorizationList !== undefined) {
+                            authorizationList.push(...opAuthorizationList)
+                        } else {
+                            authorizationList = opAuthorizationList
+                        }
+                    }
+                }
+            }
+
+            if (authorizationList && this.legacyTransactions) {
+                throw new Error("AuthorizationList is not supported for legacy transactions")
+            }
+            const newGasOptions = {
+                maxFeePerGas: gasPriceParameters.maxFeePerGas,
+                maxPriorityFeePerGas:
+                    gasPriceParameters.maxPriorityFeePerGas
+            }
+            const gasOptions = this.legacyTransactions
+                ? {
+                    gasPrice: gasPriceParameters.maxFeePerGas
+                }
+                : newGasOptions
+
             // need to use sendTransaction to target BundleBulker's fallback
-            transactionHash = await this.walletClient.sendTransaction({
+            const params = {
                 account: wallet,
                 to: compressionHandler.bundleBulkerAddress,
                 data: createCompressedCalldata(
@@ -958,8 +977,18 @@ export class Executor {
                 ),
                 gas: gasLimit,
                 nonce: nonce,
-                ...gasOptions
-            })
+            }
+            const sendTransactionParams = authorizationList
+                ? {
+                    ...params,
+                    ...newGasOptions,
+                    authorizationList
+                }
+                : {
+                    ...params,
+                    ...gasOptions
+                }
+            transactionHash = await this.walletClient.sendTransaction(sendTransactionParams)
 
             opsToBundle.map(({ userOperationHash }) => {
                 this.eventManager.emitSubmitted(

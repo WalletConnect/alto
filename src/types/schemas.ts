@@ -88,6 +88,15 @@ const userOperationV07Schema = z
             .nullable()
             .optional()
             .transform((val) => val ?? null),
+        authorizationList: z.array(z.object({
+            contractAddress: addressSchema,
+            chainId: z.number(),
+            nonce: z.number(),
+            yParity: z.number(),
+            r: hexDataSchema,
+            s: hexDataSchema,
+        }))
+        .optional(),
         signature: hexDataSchema
     })
     .strict()
