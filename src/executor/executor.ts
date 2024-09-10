@@ -55,6 +55,7 @@ import {
     simulatedOpsToResults,
     type CompressedFilterOpsAndEstimateGasParams
 } from "./utils"
+import { userOperation7702 } from "../rpc/rpcHandler"
 
 export interface GasEstimateResult {
     preverificationGas: bigint
@@ -942,16 +943,18 @@ export class Executor {
 
             let authorizationList: Authorization[] | undefined = undefined
             for (const compressedOp of compressedOpsToBundle) {
-                if ("authorizationList" in compressedOp.inflatedOp) {
-                    const opAuthorizationList = compressedOp.inflatedOp.authorizationList
-                    if (opAuthorizationList) {
-                        if (authorizationList !== undefined) {
-                            authorizationList.push(...opAuthorizationList)
-                        } else {
-                            authorizationList = opAuthorizationList
-                        }
+                const key = `${compressedOp.inflatedOp.sender}:${compressedOp.inflatedOp.nonce}:${compressedOp.inflatedOp.callData}`
+                const opAuthorizationList = userOperation7702.get(key)
+                // if ("authorizationList" in compressedOp.inflatedOp) {
+                // const opAuthorizationList = compressedOp.inflatedOp.authorizationList
+                if (opAuthorizationList) {
+                    if (authorizationList !== undefined) {
+                        authorizationList.push(...opAuthorizationList)
+                    } else {
+                        authorizationList = opAuthorizationList
                     }
                 }
+                // }
             }
 
             if (authorizationList && this.legacyTransactions) {

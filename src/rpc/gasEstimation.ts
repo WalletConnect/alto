@@ -41,6 +41,7 @@ import {
 import { z } from "zod"
 import { ExecuteSimulatorDeployedBytecode } from "./ExecuteSimulator"
 import { PimlicoEntryPointSimulationsAbi } from "@alto/types"
+import { userOperation7702 } from "./rpcHandler"
 
 function getStateOverrides({
     userOperation,
@@ -537,6 +538,7 @@ export async function simulateHandleOpV07(
         ]
     })
 
+    const key = `${userOperation.sender}:${userOperation.nonce}:${userOperation.callData}`
     const cause = await callPimlicoEntryPointSimulations(
         publicClient,
         entryPoint,
@@ -547,7 +549,7 @@ export async function simulateHandleOpV07(
         entryPointSimulationsAddress,
         blockTagSupport,
         utilityWalletAddress,
-        userOperation.authorizationList?.map((auth) => ({
+        userOperation7702.get(key)?.map((auth) => ({
             address: auth.contractAddress,
             chainId: toHex(auth.chainId),
             nonce: toHex(auth.nonce),

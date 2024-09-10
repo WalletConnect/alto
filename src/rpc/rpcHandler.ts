@@ -19,8 +19,10 @@ import {
     IOpInflatorAbi,
     RpcError,
     ValidationErrors,
+    addressSchema,
     bundlerGetStakeStatusResponseSchema,
     deriveUserOperation,
+    hexDataSchema,
     type Address,
     type BundlerClearMempoolResponseResult,
     type BundlerClearStateResponseResult,
@@ -80,6 +82,8 @@ import {
 } from "viem"
 import { base, celoAlfajores, celo, baseSepolia, optimism } from "viem/chains"
 import type { NonceQueuer } from "./nonceQueuer"
+import { Authorization } from "viem/experimental"
+import { z } from "zod"
 
 export interface IRpcEndpoint {
     handleMethod(
@@ -106,6 +110,17 @@ export interface IRpcEndpoint {
         userOperationHash: HexData32
     ): Promise<GetUserOperationReceiptResponseResult>
 }
+
+const AuthorizationListSchema = z.array(z.object({
+    contractAddress: addressSchema,
+    chainId: z.number(),
+    nonce: z.number(),
+    yParity: z.number(),
+    r: hexDataSchema,
+    s: hexDataSchema,
+}))
+
+export const userOperation7702 = new Map<string, z.infer<typeof AuthorizationListSchema>>()
 
 export class RpcHandler implements IRpcEndpoint {
     entryPoints: Address[]
@@ -216,6 +231,12 @@ export class RpcHandler implements IRpcEndpoint {
                         apiVersion,
                         ...request.params
                     )
+                }
+            case "eth_prepareSendUserOperation7702":
+                userOperation7702.set(request.params.key, request.params.value)
+                return {
+                    method,
+                    result: true
                 }
             case "eth_getUserOperationByHash":
                 return {
