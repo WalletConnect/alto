@@ -96,6 +96,7 @@ const userOperationV07Schema = z
             r: hexDataSchema,
             s: hexDataSchema,
         }))
+        .nullable()
         .optional(),
         signature: hexDataSchema
     })
