@@ -25,6 +25,7 @@ import {
     toPackedUserOperation
 } from "@alto/utils"
 import type { AbiFunction, Hex, RpcRequestErrorType } from "viem"
+import { RpcAuthorizationList } from "viem/experimental"
 import {
     type Address,
     type PublicClient,
@@ -214,6 +215,7 @@ async function callPimlicoEntryPointSimulations(
     entryPointSimulationsAddress: Address,
     blockTagSupport: boolean,
     utilityWalletAddress: Address,
+    authorizationList: RpcAuthorizationList | undefined,
     stateOverride?: StateOverrides,
     fixedGasLimitForEstimation?: bigint
 ) {
@@ -227,6 +229,7 @@ async function callPimlicoEntryPointSimulations(
         method: "eth_call",
         params: [
             {
+                authorizationList,
                 to: entryPointSimulationsAddress,
                 from: utilityWalletAddress,
                 data: callData,
@@ -544,6 +547,14 @@ export async function simulateHandleOpV07(
         entryPointSimulationsAddress,
         blockTagSupport,
         utilityWalletAddress,
+        userOperation.authorizationList?.map((auth) => ({
+            address: auth.contractAddress,
+            chainId: toHex(auth.chainId),
+            nonce: toHex(auth.nonce),
+            yParity: auth.yParity,
+            r: auth.r,
+            s: auth.s,
+        })),
         finalParam,
         fixedGasLimitForEstimation
     )
