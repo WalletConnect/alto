@@ -232,7 +232,7 @@ export class RpcHandler implements IRpcEndpoint {
                     )
                 }
             case "eth_prepareSendUserOperation7702":
-                userOperation7702.set(request.params.key, request.params.value)
+                userOperation7702.set(request.params[0], request.params[1])
                 return {
                     method,
                     result: true

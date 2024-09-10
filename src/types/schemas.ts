@@ -294,9 +294,9 @@ const sendUserOperationRequestSchema = z.object({
 
 const prepareSendUserOperation7702RequestSchema = z.object({
     method: z.literal("eth_prepareSendUserOperation7702"),
-    params: z.object({
-        key: z.string(),
-        value: z.array(z.object({
+    params: z.tuple([
+        z.string(),
+        z.array(z.object({
             contractAddress: addressSchema,
             chainId: z.number(),
             nonce: z.number(),
@@ -304,7 +304,7 @@ const prepareSendUserOperation7702RequestSchema = z.object({
             r: hexDataSchema,
             s: hexDataSchema,
         }))
-    })
+    ])
 })
 
 const getUserOperationByHashRequestSchema = z.object({
