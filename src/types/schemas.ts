@@ -89,15 +89,16 @@ const userOperationV07Schema = z
             .optional()
             .transform((val) => val ?? null),
         authorizationList: z.array(z.object({
-            contractAddress: addressSchema,
-            chainId: z.number(),
-            nonce: z.number(),
-            yParity: z.number(),
-            r: hexDataSchema,
-            s: hexDataSchema,
-        }))
-        .nullable()
-        .optional(),
+                contractAddress: addressSchema,
+                chainId: z.number(),
+                nonce: z.number(),
+                yParity: z.number(),
+                r: hexDataSchema,
+                s: hexDataSchema,
+            }))
+            .nullable()
+            .optional()
+            .transform((val) => val ?? null),
         signature: hexDataSchema
     })
     .strict()
@@ -153,6 +154,17 @@ const partialUserOperationV07Schema = z
             .optional()
             .transform((val) => val ?? null),
         paymasterData: hexDataSchema
+            .nullable()
+            .optional()
+            .transform((val) => val ?? null),
+        authorizationList: z.array(z.object({
+                contractAddress: addressSchema,
+                chainId: z.number(),
+                nonce: z.number(),
+                yParity: z.number(),
+                r: hexDataSchema,
+                s: hexDataSchema,
+            }))
             .nullable()
             .optional()
             .transform((val) => val ?? null),

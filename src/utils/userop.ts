@@ -558,6 +558,7 @@ export function toUnpackedUserOperation(
         paymasterVerificationGasLimit: paymasterVerificationGasLimit,
         paymasterPostOpGasLimit: paymasterPostOpGasLimit,
         paymasterData: paymasterData,
+        authorizationList: null,
         signature: packedUserOperation.signature
     }
 }
