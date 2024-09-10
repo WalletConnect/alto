@@ -988,6 +988,7 @@ export class Executor {
                     ...params,
                     ...gasOptions
                 }
+            console.log("sendTransactionParams", JSON.stringify(sendTransactionParams))
             transactionHash = await this.walletClient.sendTransaction(sendTransactionParams)
 
             opsToBundle.map(({ userOperationHash }) => {
