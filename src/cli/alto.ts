@@ -14,6 +14,8 @@ import {
 } from "./config"
 import { registerCommandToYargs } from "./util"
 
+console.log("STARTING")
+
 // Load environment variables from .env file
 if (process.env.DOTENV_CONFIG_PATH) {
     dotenv.config({ path: process.env.DOTENV_CONFIG_PATH })
