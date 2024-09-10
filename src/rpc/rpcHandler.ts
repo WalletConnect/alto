@@ -82,7 +82,6 @@ import {
 } from "viem"
 import { base, celoAlfajores, celo, baseSepolia, optimism } from "viem/chains"
 import type { NonceQueuer } from "./nonceQueuer"
-import { Authorization } from "viem/experimental"
 import { z } from "zod"
 
 export interface IRpcEndpoint {

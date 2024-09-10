@@ -143,7 +143,7 @@ export function toPackedUserOperation(
         preVerificationGas: unpackedUserOperation.preVerificationGas,
         gasFees: getGasLimits(unpackedUserOperation),
         paymasterAndData: getPaymasterAndData(unpackedUserOperation),
-        authorizationList: unpackedUserOperation.authorizationList,
+        // authorizationList: unpackedUserOperation.authorizationList,
         signature: unpackedUserOperation.signature
     }
 }
@@ -559,7 +559,7 @@ export function toUnpackedUserOperation(
         paymasterVerificationGasLimit: paymasterVerificationGasLimit,
         paymasterPostOpGasLimit: paymasterPostOpGasLimit,
         paymasterData: paymasterData,
-        authorizationList: packedUserOperation.authorizationList,
+        // authorizationList: packedUserOperation.authorizationList,
         signature: packedUserOperation.signature
     }
 }
