@@ -396,6 +396,7 @@ export class Executor {
                 "replacing transaction"
             )
 
+            console.log("sendTransnewRequestactionParams", JSON.stringify(newRequest))
             const txHash = await this.walletClient.sendTransaction(
                 this.legacyTransactions
                     ? {
