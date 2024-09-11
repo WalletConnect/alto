@@ -559,8 +559,8 @@ export async function simulateValidation(
         [entryPointSimulationsCallData],
         entryPointSimulationsAddress,
         blockTagSupport,
-        key,
-        utilityWalletAddress
+        utilityWalletAddress,
+        key
     )
 
     return {
