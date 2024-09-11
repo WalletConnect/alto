@@ -138,6 +138,7 @@ export async function bundlerHandler(args: IOptionsInput): Promise<void> {
             account: parsedArgs["utility-private-key"]
         })
 
+        console.log("DOexecute: 444")
         const deployHash = await walletClient.deployContract({
             chain,
             abi: [],

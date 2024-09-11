@@ -189,6 +189,7 @@ export class SenderManager {
                 for (const [address, missingBalance] of Object.entries(
                     balancesMissing
                 )) {
+                    console.log("DOexecute: 555")
                     const tx = await walletClient.sendTransaction({
                         account: this.utilityAccount,
                         // @ts-ignore

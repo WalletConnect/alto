@@ -426,6 +426,7 @@ export async function flushStuckTransaction(
         nonceToFlush++
     ) {
         try {
+            console.log("DOexecute: 333")
             const txHash = await walletClient.sendTransaction({
                 account: wallet,
                 to: wallet.address,
