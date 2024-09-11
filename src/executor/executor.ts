@@ -680,6 +680,7 @@ export class Executor {
                       )
             ) as PackedUserOperation[]
 
+            console.log("DOexecute: userOps: " + JSON.stringify(userOps) + " opts: " + JSON.stringify(opts))
             transactionHash = await ep.write.handleOps(
                 [userOps, wallet.address],
                 opts
