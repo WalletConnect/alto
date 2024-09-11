@@ -655,35 +655,65 @@ export class Executor {
 
         let transactionHash: HexData32
         try {
-            const isLegacyTransaction = this.legacyTransactions
-
-            const gasOptions = isLegacyTransaction
-                ? { gasPrice: gasPriceParameters.maxFeePerGas }
-                : {
-                      maxFeePerGas: gasPriceParameters.maxFeePerGas,
-                      maxPriorityFeePerGas:
-                          gasPriceParameters.maxPriorityFeePerGas
-                  }
-
-            const opts = {
-                account: wallet,
-                gas: gasLimit,
-                nonce: nonce,
-                ...gasOptions
-            }
-
             const userOps = opsWithHashToBundle.map((owh) =>
                 isUserOpVersion06
                     ? owh.mempoolUserOperation
                     : toPackedUserOperation(
-                          owh.mempoolUserOperation as UserOperationV07
-                      )
+                        owh.mempoolUserOperation as UserOperationV07
+                    )
             ) as PackedUserOperation[]
 
-            console.log("DOexecute: userOps: " + JSON.stringify(userOps) + " opts: " + JSON.stringify(opts))
+            let authorizationList: Authorization[] | undefined = undefined
+            for (const compressedOp of userOps) {
+                const key = `${compressedOp.sender}:${compressedOp.nonce}:${compressedOp.callData}`
+                const opAuthorizationList = userOperation7702.get(key)
+                // if ("authorizationList" in compressedOp.inflatedOp) {
+                // const opAuthorizationList = compressedOp.inflatedOp.authorizationList
+                if (opAuthorizationList) {
+                    if (authorizationList !== undefined) {
+                        authorizationList.push(...opAuthorizationList)
+                    } else {
+                        authorizationList = opAuthorizationList
+                    }
+                }
+                // }
+            }
+
+            if (authorizationList && this.legacyTransactions) {
+                throw new Error("AuthorizationList is not supported for legacy transactions")
+            }
+            const newGasOptions = {
+                maxFeePerGas: gasPriceParameters.maxFeePerGas,
+                maxPriorityFeePerGas:
+                    gasPriceParameters.maxPriorityFeePerGas
+            }
+            const gasOptions = this.legacyTransactions
+                ? {
+                    gasPrice: gasPriceParameters.maxFeePerGas
+                }
+                : newGasOptions
+
+            const opts = {
+                account: wallet,
+                gas: gasLimit,
+                nonce: nonce
+            }
+
+            const sendTransactionParams = authorizationList
+                ? {
+                    ...opts,
+                    ...newGasOptions,
+                    authorizationList
+                }
+                : {
+                    ...opts,
+                    ...gasOptions
+                }
+
+            console.log("DOexecute: userOps: " + JSON.stringify(userOps) + " opts: " + JSON.stringify(sendTransactionParams))
             transactionHash = await ep.write.handleOps(
                 [userOps, wallet.address],
-                opts
+                sendTransactionParams
             )
 
             opsWithHashToBundle.map(({ userOperationHash }) => {
