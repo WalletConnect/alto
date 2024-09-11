@@ -19,6 +19,7 @@ import {
     type ValidationResultV07
 } from "@alto/types"
 import { deepHexlify, toPackedUserOperation } from "@alto/utils"
+import { userOperation7702 } from "./rpcHandler"
 
 const panicCodes: { [key: number]: string } = {
     // from https://docs.soliditylang.org/en/v0.8.0/control-structures.html
@@ -248,6 +249,7 @@ async function callPimlicoEntryPointSimulations(
     entryPointSimulationsAddress: Address,
     blockTagSupport: boolean,
     utilityWalletAddress: Address,
+    key: string,
     stateOverride?: StateOverrides
 ) {
     const callData = encodeFunctionData({
@@ -263,7 +265,15 @@ async function callPimlicoEntryPointSimulations(
             {
                 to: entryPointSimulationsAddress,
                 from: utilityWalletAddress,
-                data: callData
+                data: callData,
+                authorizationList: userOperation7702.get(key)?.map((auth) => ({
+                    address: auth.contractAddress,
+                    chainId: toHex(auth.chainId),
+                    nonce: toHex(auth.nonce),
+                    yParity: auth.yParity,
+                    r: auth.r,
+                    s: auth.s,
+                })),
             },
             blockTagSupport
                 ? "latest"
@@ -314,6 +324,8 @@ export async function simulateHandleOp(
         args: [packedUserOperation, targetAddress, targetCallData]
     })
 
+    console.error("simulateHandleOp: going to eth_call")
+    const key = `${userOperation.sender}:${userOperation.nonce}:${userOperation.callData}`
     const cause = await callPimlicoEntryPointSimulations(
         publicClient,
         entryPoint,
@@ -324,6 +336,7 @@ export async function simulateHandleOp(
         entryPointSimulationsAddress,
         blockTagSupport,
         utilityWalletAddress,
+        key,
         finalParam
     )
 
@@ -538,12 +551,15 @@ export async function simulateValidation(
         args: [packedUserOperations]
     })
 
+    console.error("simulateValidation: going to eth_call")
+    const key = `${userOperation.sender}:${userOperation.nonce}:${userOperation.callData}`
     const errorResult = await callPimlicoEntryPointSimulations(
         publicClient,
         entryPoint,
         [entryPointSimulationsCallData],
         entryPointSimulationsAddress,
         blockTagSupport,
+        key,
         utilityWalletAddress
     )
 
