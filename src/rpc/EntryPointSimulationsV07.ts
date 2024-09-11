@@ -256,7 +256,7 @@ async function callPimlicoEntryPointSimulations(
         args: [entryPoint, entryPointSimulationsCallData]
     })
 
-    console.error("eth_call")
+    console.error("callPimlicoEntryPointSimulations: eth_call")
     const result = (await publicClient.request({
         method: "eth_call",
         params: [
