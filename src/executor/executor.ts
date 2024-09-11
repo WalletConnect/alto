@@ -397,7 +397,7 @@ export class Executor {
                 "replacing transaction"
             )
 
-            childLogger.fatal("sendTransnewRequestactionParams: " + JSON.stringify(newRequest))
+            console.error("DOexecute: sendTransnewRequestactionParams: " + JSON.stringify(newRequest))
             const txHash = await this.walletClient.sendTransaction(
                 this.legacyTransactions
                     ? {
@@ -992,7 +992,7 @@ export class Executor {
                     ...params,
                     ...gasOptions
                 }
-            childLogger.fatal("sendTransactionParams: " + JSON.stringify(sendTransactionParams))
+            console.error("DOexecute: sendTransactionParams: " + JSON.stringify(sendTransactionParams))
             transactionHash = await this.walletClient.sendTransaction(sendTransactionParams)
 
             opsToBundle.map(({ userOperationHash }) => {

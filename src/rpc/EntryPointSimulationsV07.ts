@@ -258,7 +258,7 @@ async function callPimlicoEntryPointSimulations(
         args: [entryPoint, entryPointSimulationsCallData]
     })
 
-    console.error("callPimlicoEntryPointSimulations: eth_call")
+    console.error("DOsimulate: callPimlicoEntryPointSimulations2: eth_call")
     const result = (await publicClient.request({
         method: "eth_call",
         params: [
@@ -324,7 +324,7 @@ export async function simulateHandleOp(
         args: [packedUserOperation, targetAddress, targetCallData]
     })
 
-    console.error("simulateHandleOp: going to eth_call")
+    console.error("DOsimulate: simulateHandleOp: going to eth_call")
     const key = `${userOperation.sender}:${userOperation.nonce}:${userOperation.callData}`
     const cause = await callPimlicoEntryPointSimulations(
         publicClient,
@@ -551,7 +551,7 @@ export async function simulateValidation(
         args: [packedUserOperations]
     })
 
-    console.error("simulateValidation: going to eth_call")
+    console.error("DOsimulate: simulateValidation: going to eth_call")
     const key = `${userOperation.sender}:${userOperation.nonce}:${userOperation.callData}`
     const errorResult = await callPimlicoEntryPointSimulations(
         publicClient,
