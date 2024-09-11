@@ -225,6 +225,7 @@ async function callPimlicoEntryPointSimulations(
         functionName: "simulateEntryPoint",
         args: [entryPoint, entryPointSimulationsCallData]
     })
+    console.error("callPimlicoEntryPointSimulations: " + JSON.stringify(authorizationList))
 
     const result = (await publicClient.request({
         method: "eth_call",
