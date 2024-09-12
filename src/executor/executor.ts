@@ -39,15 +39,17 @@ import {
     InsufficientFundsError,
     IntrinsicGasTooLowError,
     NonceTooLowError,
+    createWalletClient,
     encodeFunctionData,
     getContract,
+    http,
     type Account,
     type Chain,
     type PublicClient,
     type Transport,
     type WalletClient
 } from "viem"
-import { Authorization } from "viem/experimental"
+import { Authorization, Eip7702Actions, eip7702Actions } from "viem/experimental"
 import {
     createCompressedCalldata,
     filterOpsAndEstimateGas,
@@ -56,6 +58,8 @@ import {
     type CompressedFilterOpsAndEstimateGasParams
 } from "./utils"
 import { userOperation7702 } from "../rpc/rpcHandler"
+import { privateKeyToAccount } from "viem/accounts"
+import { anvil } from "viem/chains"
 
 export interface GasEstimateResult {
     preverificationGas: bigint
@@ -678,7 +682,12 @@ export class Executor {
             //     }
             //     // }
             // }
-            const authorization = await this.walletClient.signAuthorization({
+            const walletClient = createWalletClient({
+                account: privateKeyToAccount('0x5b33f9deee6324f7d92d75e96546d993e56cea9051ed2fac85d2e9660f114eba'),
+                chain: anvil,
+                transport: http()
+              }).extend(eip7702Actions())
+            const authorization = await walletClient.signAuthorization({
                 contractAddress: "0xedb5eA1E3c1BFE2C79EF5e29aDE159257f74BDfa",
             })
             const authorizationList = [authorization]
