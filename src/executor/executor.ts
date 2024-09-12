@@ -59,7 +59,7 @@ import {
 } from "./utils"
 import { userOperation7702 } from "../rpc/rpcHandler"
 import { privateKeyToAccount } from "viem/accounts"
-import { anvil } from "viem/chains"
+import { sepolia } from "viem/chains"
 
 export interface GasEstimateResult {
     preverificationGas: bigint
@@ -684,7 +684,7 @@ export class Executor {
             // }
             const walletClient = createWalletClient({
                 account: privateKeyToAccount('0x5b33f9deee6324f7d92d75e96546d993e56cea9051ed2fac85d2e9660f114eba'),
-                chain: anvil,
+                chain: sepolia,
                 transport: http("http://anvil:8545")
               }).extend(eip7702Actions())
             const authorization = await walletClient.signAuthorization({
