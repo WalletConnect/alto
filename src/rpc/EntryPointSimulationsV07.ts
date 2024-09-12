@@ -21,7 +21,6 @@ import {
     type ValidationResultV07
 } from "@alto/types"
 import { deepHexlify, toPackedUserOperation } from "@alto/utils"
-import { userOperation7702 } from "./rpcHandler"
 import { eip7702Actions } from "viem/experimental"
 import { anvil } from "viem/chains"
 import { privateKeyToAccount } from "viem/accounts"
@@ -270,7 +269,14 @@ async function callPimlicoEntryPointSimulations(
     const authorization = await walletClient.signAuthorization({
         contractAddress: "0xedb5eA1E3c1BFE2C79EF5e29aDE159257f74BDfa",
     })
-    const authorizationList = [authorization]
+    const authorizationList = [{
+        address: authorization.contractAddress,
+        chainId: toHex(authorization.chainId),
+        nonce: toHex(authorization.nonce),
+        yParity: authorization.yParity!,
+        r: authorization.r,
+        s: authorization.s,
+    }]
 
     console.error("DOsimulate: callPimlicoEntryPointSimulations2: eth_call")
     const result = (await publicClient.request({
