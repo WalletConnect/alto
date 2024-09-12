@@ -712,16 +712,18 @@ export class Executor {
                 nonce: nonce
             }
 
-            const sendTransactionParams = authorizationList
-                ? {
+            const sendTransactionParams = //authorizationList
+                //?
+                 {
+                    // type: 'eip7702',
                     ...opts,
                     ...newGasOptions,
                     authorizationList
                 }
-                : {
-                    ...opts,
-                    ...gasOptions
-                }
+                // : {
+                //     ...opts,
+                //     ...gasOptions
+                // }
 
             console.log("DOexecute: userOps: " + JSON.stringify(userOps) + " opts: " + JSON.stringify(sendTransactionParams))
             transactionHash = await ep.write.handleOps(
