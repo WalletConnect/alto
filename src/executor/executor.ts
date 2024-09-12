@@ -49,7 +49,7 @@ import {
     type Transport,
     type WalletClient
 } from "viem"
-import { Authorization, Eip7702Actions, eip7702Actions } from "viem/experimental"
+import { Authorization, eip7702Actions } from "viem/experimental"
 import {
     createCompressedCalldata,
     filterOpsAndEstimateGas,
