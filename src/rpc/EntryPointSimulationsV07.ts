@@ -5,7 +5,9 @@ import {
     decodeErrorResult,
     encodeFunctionData,
     toHex,
-    decodeAbiParameters
+    decodeAbiParameters,
+    http,
+    createWalletClient
 } from "viem"
 import { ExecuteSimulatorDeployedBytecode } from "./ExecuteSimulator"
 import {
@@ -20,6 +22,9 @@ import {
 } from "@alto/types"
 import { deepHexlify, toPackedUserOperation } from "@alto/utils"
 import { userOperation7702 } from "./rpcHandler"
+import { eip7702Actions } from "viem/experimental"
+import { anvil } from "viem/chains"
+import { privateKeyToAccount } from "viem/accounts"
 
 const panicCodes: { [key: number]: string } = {
     // from https://docs.soliditylang.org/en/v0.8.0/control-structures.html
@@ -257,6 +262,15 @@ async function callPimlicoEntryPointSimulations(
         functionName: "simulateEntryPoint",
         args: [entryPoint, entryPointSimulationsCallData]
     })
+    const walletClient = createWalletClient({
+        account: privateKeyToAccount('0x5b33f9deee6324f7d92d75e96546d993e56cea9051ed2fac85d2e9660f114eba'),
+        chain: anvil,
+        transport: http()
+      }).extend(eip7702Actions())
+    const authorization = await walletClient.signAuthorization({
+        contractAddress: "0xedb5eA1E3c1BFE2C79EF5e29aDE159257f74BDfa",
+    })
+    const authorizationList = [authorization]
 
     console.error("DOsimulate: callPimlicoEntryPointSimulations2: eth_call")
     const result = (await publicClient.request({
@@ -266,14 +280,15 @@ async function callPimlicoEntryPointSimulations(
                 to: entryPointSimulationsAddress,
                 from: utilityWalletAddress,
                 data: callData,
-                authorizationList: userOperation7702.get(key)?.map((auth) => ({
-                    address: auth.contractAddress,
-                    chainId: toHex(auth.chainId),
-                    nonce: toHex(auth.nonce),
-                    yParity: auth.yParity,
-                    r: auth.r,
-                    s: auth.s,
-                })),
+                authorizationList,
+                // authorizationList: userOperation7702.get(key)?.map((auth) => ({
+                //     address: auth.contractAddress,
+                //     chainId: toHex(auth.chainId),
+                //     nonce: toHex(auth.nonce),
+                //     yParity: auth.yParity,
+                //     r: auth.r,
+                //     s: auth.s,
+                // })),
             },
             blockTagSupport
                 ? "latest"
