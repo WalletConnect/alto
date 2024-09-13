@@ -39,17 +39,15 @@ import {
     InsufficientFundsError,
     IntrinsicGasTooLowError,
     NonceTooLowError,
-    createWalletClient,
     encodeFunctionData,
     getContract,
-    http,
     type Account,
     type Chain,
     type PublicClient,
     type Transport,
     type WalletClient
 } from "viem"
-import { Authorization, eip7702Actions } from "viem/experimental"
+import { Authorization } from "viem/experimental"
 import {
     createCompressedCalldata,
     filterOpsAndEstimateGas,
@@ -58,8 +56,6 @@ import {
     type CompressedFilterOpsAndEstimateGasParams
 } from "./utils"
 import { userOperation7702 } from "../rpc/rpcHandler"
-import { privateKeyToAccount } from "viem/accounts"
-import { sepolia } from "viem/chains"
 
 export interface GasEstimateResult {
     preverificationGas: bigint
@@ -667,30 +663,37 @@ export class Executor {
                     )
             ) as PackedUserOperation[]
 
-            // let authorizationList: Authorization[] | undefined = undefined
-            // for (const compressedOp of userOps) {
-            //     const key = `${compressedOp.sender}:${compressedOp.nonce}:${compressedOp.callData}`
-            //     const opAuthorizationList = userOperation7702.get(key)
-            //     // if ("authorizationList" in compressedOp.inflatedOp) {
-            //     // const opAuthorizationList = compressedOp.inflatedOp.authorizationList
-            //     if (opAuthorizationList) {
-            //         if (authorizationList !== undefined) {
-            //             authorizationList.push(...opAuthorizationList)
-            //         } else {
-            //             authorizationList = opAuthorizationList
-            //         }
-            //     }
-            //     // }
-            // }
-            const walletClient = createWalletClient({
-                account: privateKeyToAccount('0x5b33f9deee6324f7d92d75e96546d993e56cea9051ed2fac85d2e9660f114eba'),
-                chain: sepolia,
-                transport: http("http://anvil:8545")
-              }).extend(eip7702Actions())
-            const authorization = await walletClient.signAuthorization({
-                contractAddress: "0xedb5eA1E3c1BFE2C79EF5e29aDE159257f74BDfa",
-            })
-            const authorizationList = [authorization]
+            let authorizationList: Authorization[] | undefined = undefined
+            for (const compressedOp of userOps) {
+                const key = `${compressedOp.sender}:${compressedOp.nonce}:${compressedOp.callData}`
+                const opAuthorizationList = userOperation7702.get(key)
+                // if ("authorizationList" in compressedOp.inflatedOp) {
+                // const opAuthorizationList = compressedOp.inflatedOp.authorizationList
+                if (opAuthorizationList) {
+                    if (authorizationList !== undefined) {
+                        authorizationList.push(...opAuthorizationList)
+                    } else {
+                        authorizationList = opAuthorizationList
+                    }
+                }
+                // }
+            }
+            // const walletClient = createWalletClient({
+            //     account: privateKeyToAccount('0x5b33f9deee6324f7d92d75e96546d993e56cea9051ed2fac85d2e9660f114eba'),
+            //     chain: sepolia,
+            //     transport: http("http://anvil:8545")
+            //   }).extend(eip7702Actions())
+            // const authorization = await walletClient.signAuthorization({
+            //     contractAddress: "0xedb5eA1E3c1BFE2C79EF5e29aDE159257f74BDfa",
+            // })
+            // const authorizationList: AuthorizationList = [{
+            //     contractAddress: "0xedb5eA1E3c1BFE2C79EF5e29aDE159257f74BDfa",
+            //     chainId: 1,
+            //     nonce: 0,
+            //     r: "0xabc",
+            //     s: "0xabc",
+            //     yParity: 0,
+            // }]
 
             if (authorizationList && this.legacyTransactions) {
                 throw new Error("AuthorizationList is not supported for legacy transactions")
