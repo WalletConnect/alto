@@ -248,7 +248,7 @@ async function callPimlicoEntryPointSimulations(
             ...(stateOverride ? [stateOverride] : [])
         ]
     })) as Hex
-    console.error("DOsimulate: callPimlicoEntryPointSimulations1 result: " + result)
+    console.error("DOsimulate: callPimlicoEntryPointSimulations1 result: " + JSON.stringify(result))
 
     const returnBytes = decodeAbiParameters(
         [{ name: "ret", type: "bytes[]" }],
@@ -260,7 +260,7 @@ async function callPimlicoEntryPointSimulations(
             abi: EntryPointV07Abi,
             data: data
         })
-        console.error("DOsimulate: callPimlicoEntryPointSimulations1 decodedDelegateAndError: " + decodedDelegateAndError)
+        console.error("DOsimulate: callPimlicoEntryPointSimulations1 decodedDelegateAndError: " + JSON.stringify(decodedDelegateAndError))
 
         if (!decodedDelegateAndError?.args?.[1]) {
             throw new Error("Unexpected error")
