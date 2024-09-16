@@ -589,6 +589,7 @@ export async function simulateHandleOpV07(
             }
         }
     } catch (e) {
+        console.error("DOsimulate: simulateHandleOpV07: " + e)
         return {
             result: "failed",
             data: "Unknown error, could not parse simulate handle op result.",
