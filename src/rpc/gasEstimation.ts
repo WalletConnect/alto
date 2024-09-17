@@ -228,6 +228,19 @@ async function callPimlicoEntryPointSimulations(
     console.error("DOsimulate: callPimlicoEntryPointSimulations1: " + JSON.stringify(authorizationList))
     console.error("entryPointSimulationsAddress: " + entryPointSimulationsAddress)
     console.error("entryPoint: " + entryPoint)
+    console.error("eth_call params: " + JSON.stringify({
+        authorizationList,
+        to: entryPointSimulationsAddress,
+        from: utilityWalletAddress,
+        data: callData,
+        ...(fixedGasLimitForEstimation !== undefined && {
+            gas: `0x${fixedGasLimitForEstimation.toString(16)}`
+        })
+    }))
+    console.log("eth_call block: " + JSON.stringify(blockTagSupport
+        ? "latest"
+        : toHex(await publicClient.getBlockNumber())))
+    console.log("eth_call stateOverride: " + JSON.stringify([...(stateOverride ? [stateOverride] : [])]))
 
     const result = (await publicClient.request({
         method: "eth_call",
