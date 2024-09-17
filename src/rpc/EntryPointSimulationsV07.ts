@@ -5,7 +5,9 @@ import {
     decodeErrorResult,
     encodeFunctionData,
     toHex,
-    decodeAbiParameters
+    decodeAbiParameters,
+    http,
+    createWalletClient
 } from "viem"
 import { ExecuteSimulatorDeployedBytecode } from "./ExecuteSimulator"
 import {
@@ -19,6 +21,9 @@ import {
     type ValidationResultV07
 } from "@alto/types"
 import { deepHexlify, toPackedUserOperation } from "@alto/utils"
+import { eip7702Actions } from "viem/experimental"
+import { sepolia } from "viem/chains"
+import { privateKeyToAccount } from "viem/accounts"
 
 const panicCodes: { [key: number]: string } = {
     // from https://docs.soliditylang.org/en/v0.8.0/control-structures.html
@@ -248,6 +253,7 @@ async function callPimlicoEntryPointSimulations(
     entryPointSimulationsAddress: Address,
     blockTagSupport: boolean,
     utilityWalletAddress: Address,
+    key: string,
     stateOverride?: StateOverrides
 ) {
     const callData = encodeFunctionData({
@@ -255,14 +261,40 @@ async function callPimlicoEntryPointSimulations(
         functionName: "simulateEntryPoint",
         args: [entryPoint, entryPointSimulationsCallData]
     })
+    const walletClient = createWalletClient({
+        account: privateKeyToAccount('0x5b33f9deee6324f7d92d75e96546d993e56cea9051ed2fac85d2e9660f114eba'),
+        chain: sepolia,
+        transport: http("http://anvil:8545")
+      }).extend(eip7702Actions())
+    const authorization = await walletClient.signAuthorization({
+        contractAddress: "0xedb5eA1E3c1BFE2C79EF5e29aDE159257f74BDfa",
+    })
+    const authorizationList = [{
+        address: authorization.contractAddress,
+        chainId: toHex(authorization.chainId),
+        nonce: toHex(authorization.nonce),
+        yParity: authorization.yParity!,
+        r: authorization.r,
+        s: authorization.s,
+    }]
 
+    console.error("DOsimulate: callPimlicoEntryPointSimulations2: eth_call")
     const result = (await publicClient.request({
         method: "eth_call",
         params: [
             {
                 to: entryPointSimulationsAddress,
                 from: utilityWalletAddress,
-                data: callData
+                data: callData,
+                authorizationList,
+                // authorizationList: userOperation7702.get(key)?.map((auth) => ({
+                //     address: auth.contractAddress,
+                //     chainId: toHex(auth.chainId),
+                //     nonce: toHex(auth.nonce),
+                //     yParity: auth.yParity,
+                //     r: auth.r,
+                //     s: auth.s,
+                // })),
             },
             blockTagSupport
                 ? "latest"
@@ -313,6 +345,8 @@ export async function simulateHandleOp(
         args: [packedUserOperation, targetAddress, targetCallData]
     })
 
+    console.error("DOsimulate: simulateHandleOp: going to eth_call")
+    const key = `${userOperation.sender}:${userOperation.nonce}:${userOperation.callData}`
     const cause = await callPimlicoEntryPointSimulations(
         publicClient,
         entryPoint,
@@ -323,6 +357,7 @@ export async function simulateHandleOp(
         entryPointSimulationsAddress,
         blockTagSupport,
         utilityWalletAddress,
+        key,
         finalParam
     )
 
@@ -537,13 +572,16 @@ export async function simulateValidation(
         args: [packedUserOperations]
     })
 
+    console.error("DOsimulate: simulateValidation: going to eth_call")
+    const key = `${userOperation.sender}:${userOperation.nonce}:${userOperation.callData}`
     const errorResult = await callPimlicoEntryPointSimulations(
         publicClient,
         entryPoint,
         [entryPointSimulationsCallData],
         entryPointSimulationsAddress,
         blockTagSupport,
-        utilityWalletAddress
+        utilityWalletAddress,
+        key
     )
 
     return {

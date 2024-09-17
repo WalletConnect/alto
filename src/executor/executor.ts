@@ -47,6 +47,7 @@ import {
     type Transport,
     type WalletClient
 } from "viem"
+import { Authorization } from "viem/experimental"
 import {
     createCompressedCalldata,
     filterOpsAndEstimateGas,
@@ -54,6 +55,7 @@ import {
     simulatedOpsToResults,
     type CompressedFilterOpsAndEstimateGasParams
 } from "./utils"
+import { userOperation7702 } from "../rpc/rpcHandler"
 
 export interface GasEstimateResult {
     preverificationGas: bigint
@@ -63,15 +65,15 @@ export interface GasEstimateResult {
 
 export type ReplaceTransactionResult =
     | {
-          status: "replaced"
-          transactionInfo: TransactionInfo
-      }
+        status: "replaced"
+        transactionInfo: TransactionInfo
+    }
     | {
-          status: "potentially_already_included"
-      }
+        status: "potentially_already_included"
+    }
     | {
-          status: "failed"
-      }
+        status: "failed"
+    }
 
 export class Executor {
     // private unWatch: WatchBlocksReturnType | undefined
@@ -191,9 +193,9 @@ export class Executor {
                 (acc, op) => {
                     if (
                         acc[0] !==
-                            isVersion06(
-                                op.mempoolUserOperation as UserOperation
-                            ) ||
+                        isVersion06(
+                            op.mempoolUserOperation as UserOperation
+                        ) ||
                         acc[1] !== op.entryPoint
                     ) {
                         throw new Error(
@@ -346,28 +348,28 @@ export class Executor {
 
             newRequest.data = isUserOpVersion06
                 ? encodeFunctionData({
-                      abi: EntryPointV06Abi,
-                      functionName: "handleOps",
-                      args: [
-                          opsToBundle.map(
-                              (opInfo) =>
-                                  opInfo.mempoolUserOperation as UserOperationV06
-                          ),
-                          transactionInfo.executor.address
-                      ]
-                  })
+                    abi: EntryPointV06Abi,
+                    functionName: "handleOps",
+                    args: [
+                        opsToBundle.map(
+                            (opInfo) =>
+                                opInfo.mempoolUserOperation as UserOperationV06
+                        ),
+                        transactionInfo.executor.address
+                    ]
+                })
                 : encodeFunctionData({
-                      abi: EntryPointV07Abi,
-                      functionName: "handleOps",
-                      args: [
-                          opsToBundle.map((opInfo) =>
-                              toPackedUserOperation(
-                                  opInfo.mempoolUserOperation as UserOperationV07
-                              )
-                          ),
-                          transactionInfo.executor.address
-                      ]
-                  })
+                    abi: EntryPointV07Abi,
+                    functionName: "handleOps",
+                    args: [
+                        opsToBundle.map((opInfo) =>
+                            toPackedUserOperation(
+                                opInfo.mempoolUserOperation as UserOperationV07
+                            )
+                        ),
+                        transactionInfo.executor.address
+                    ]
+                })
         } else if (transactionInfo.transactionType === "compressed") {
             const compressedOps = opsToBundle.map(
                 (opInfo) =>
@@ -395,16 +397,17 @@ export class Executor {
                 "replacing transaction"
             )
 
+            console.error("DOexecute: sendTransnewRequestactionParams: " + JSON.stringify(newRequest))
             const txHash = await this.walletClient.sendTransaction(
                 this.legacyTransactions
                     ? {
-                          ...newRequest,
-                          gasPrice: newRequest.maxFeePerGas,
-                          maxFeePerGas: undefined,
-                          maxPriorityFeePerGas: undefined,
-                          type: "legacy",
-                          accessList: undefined
-                      }
+                        ...newRequest,
+                        gasPrice: newRequest.maxFeePerGas,
+                        maxFeePerGas: undefined,
+                        maxPriorityFeePerGas: undefined,
+                        type: "legacy",
+                        accessList: undefined
+                    }
                     : newRequest
             )
 
@@ -652,34 +655,82 @@ export class Executor {
 
         let transactionHash: HexData32
         try {
-            const isLegacyTransaction = this.legacyTransactions
-
-            const gasOptions = isLegacyTransaction
-                ? { gasPrice: gasPriceParameters.maxFeePerGas }
-                : {
-                      maxFeePerGas: gasPriceParameters.maxFeePerGas,
-                      maxPriorityFeePerGas:
-                          gasPriceParameters.maxPriorityFeePerGas
-                  }
-
-            const opts = {
-                account: wallet,
-                gas: gasLimit,
-                nonce: nonce,
-                ...gasOptions
-            }
-
             const userOps = opsWithHashToBundle.map((owh) =>
                 isUserOpVersion06
                     ? owh.mempoolUserOperation
                     : toPackedUserOperation(
-                          owh.mempoolUserOperation as UserOperationV07
-                      )
+                        owh.mempoolUserOperation as UserOperationV07
+                    )
             ) as PackedUserOperation[]
 
+            let authorizationList: Authorization[] | undefined = undefined
+            for (const compressedOp of userOps) {
+                const key = `${compressedOp.sender}:${compressedOp.nonce}:${compressedOp.callData}`
+                const opAuthorizationList = userOperation7702.get(key)
+                // if ("authorizationList" in compressedOp.inflatedOp) {
+                // const opAuthorizationList = compressedOp.inflatedOp.authorizationList
+                if (opAuthorizationList) {
+                    if (authorizationList !== undefined) {
+                        authorizationList.push(...opAuthorizationList)
+                    } else {
+                        authorizationList = opAuthorizationList
+                    }
+                }
+                // }
+            }
+            // const walletClient = createWalletClient({
+            //     account: privateKeyToAccount('0x5b33f9deee6324f7d92d75e96546d993e56cea9051ed2fac85d2e9660f114eba'),
+            //     chain: sepolia,
+            //     transport: http("http://anvil:8545")
+            //   }).extend(eip7702Actions())
+            // const authorization = await walletClient.signAuthorization({
+            //     contractAddress: "0xedb5eA1E3c1BFE2C79EF5e29aDE159257f74BDfa",
+            // })
+            // const authorizationList: AuthorizationList = [{
+            //     contractAddress: "0xedb5eA1E3c1BFE2C79EF5e29aDE159257f74BDfa",
+            //     chainId: 1,
+            //     nonce: 0,
+            //     r: "0xabc",
+            //     s: "0xabc",
+            //     yParity: 0,
+            // }]
+
+            if (authorizationList && this.legacyTransactions) {
+                throw new Error("AuthorizationList is not supported for legacy transactions")
+            }
+            const newGasOptions = {
+                maxFeePerGas: gasPriceParameters.maxFeePerGas,
+                maxPriorityFeePerGas:
+                    gasPriceParameters.maxPriorityFeePerGas
+            }
+            const gasOptions = this.legacyTransactions
+                ? {
+                    gasPrice: gasPriceParameters.maxFeePerGas
+                }
+                : newGasOptions
+
+            const opts = {
+                account: wallet,
+                gas: gasLimit,
+                nonce: nonce
+            }
+
+            const sendTransactionParams = authorizationList
+                ?
+                 {
+                    ...opts,
+                    ...newGasOptions,
+                    authorizationList
+                }
+                : {
+                    ...opts,
+                    ...gasOptions
+                }
+
+            console.log("DOexecute: userOps: " + JSON.stringify(userOps) + " opts: " + JSON.stringify(sendTransactionParams))
             transactionHash = await ep.write.handleOps(
                 [userOps, wallet.address],
-                opts
+                sendTransactionParams
             )
 
             opsWithHashToBundle.map(({ userOperationHash }) => {
@@ -772,28 +823,28 @@ export class Executor {
                 to: ep.address,
                 data: isUserOpVersion06
                     ? encodeFunctionData({
-                          abi: ep.abi,
-                          functionName: "handleOps",
-                          args: [
-                              opsWithHashToBundle.map(
-                                  (owh) =>
-                                      owh.mempoolUserOperation as UserOperationV06
-                              ),
-                              wallet.address
-                          ]
-                      })
+                        abi: ep.abi,
+                        functionName: "handleOps",
+                        args: [
+                            opsWithHashToBundle.map(
+                                (owh) =>
+                                    owh.mempoolUserOperation as UserOperationV06
+                            ),
+                            wallet.address
+                        ]
+                    })
                     : encodeFunctionData({
-                          abi: ep.abi,
-                          functionName: "handleOps",
-                          args: [
-                              opsWithHashToBundle.map((owh) =>
-                                  toPackedUserOperation(
-                                      owh.mempoolUserOperation as UserOperationV07
-                                  )
-                              ),
-                              wallet.address
-                          ]
-                      }),
+                        abi: ep.abi,
+                        functionName: "handleOps",
+                        args: [
+                            opsWithHashToBundle.map((owh) =>
+                                toPackedUserOperation(
+                                    owh.mempoolUserOperation as UserOperationV07
+                                )
+                            ),
+                            wallet.address
+                        ]
+                    }),
                 gas: gasLimit,
                 chain: this.walletClient.chain,
                 maxFeePerGas: gasPriceParameters.maxFeePerGas,
@@ -931,16 +982,6 @@ export class Executor {
 
         let transactionHash: HexData32
         try {
-            const gasOptions = this.legacyTransactions
-                ? {
-                      gasPrice: gasPriceParameters.maxFeePerGas
-                  }
-                : {
-                      maxFeePerGas: gasPriceParameters.maxFeePerGas,
-                      maxPriorityFeePerGas:
-                          gasPriceParameters.maxPriorityFeePerGas
-                  }
-
             const compressedOpsToBundle = opsToBundle.map(
                 ({ mempoolUserOperation }) => {
                     const compressedOp = mempoolUserOperation
@@ -948,8 +989,38 @@ export class Executor {
                 }
             )
 
+            let authorizationList: Authorization[] | undefined = undefined
+            for (const compressedOp of compressedOpsToBundle) {
+                const key = `${compressedOp.inflatedOp.sender}:${compressedOp.inflatedOp.nonce}:${compressedOp.inflatedOp.callData}`
+                const opAuthorizationList = userOperation7702.get(key)
+                // if ("authorizationList" in compressedOp.inflatedOp) {
+                // const opAuthorizationList = compressedOp.inflatedOp.authorizationList
+                if (opAuthorizationList) {
+                    if (authorizationList !== undefined) {
+                        authorizationList.push(...opAuthorizationList)
+                    } else {
+                        authorizationList = opAuthorizationList
+                    }
+                }
+                // }
+            }
+
+            if (authorizationList && this.legacyTransactions) {
+                throw new Error("AuthorizationList is not supported for legacy transactions")
+            }
+            const newGasOptions = {
+                maxFeePerGas: gasPriceParameters.maxFeePerGas,
+                maxPriorityFeePerGas:
+                    gasPriceParameters.maxPriorityFeePerGas
+            }
+            const gasOptions = this.legacyTransactions
+                ? {
+                    gasPrice: gasPriceParameters.maxFeePerGas
+                }
+                : newGasOptions
+
             // need to use sendTransaction to target BundleBulker's fallback
-            transactionHash = await this.walletClient.sendTransaction({
+            const params = {
                 account: wallet,
                 to: compressionHandler.bundleBulkerAddress,
                 data: createCompressedCalldata(
@@ -958,8 +1029,19 @@ export class Executor {
                 ),
                 gas: gasLimit,
                 nonce: nonce,
-                ...gasOptions
-            })
+            }
+            const sendTransactionParams = authorizationList
+                ? {
+                    ...params,
+                    ...newGasOptions,
+                    authorizationList
+                }
+                : {
+                    ...params,
+                    ...gasOptions
+                }
+            console.error("DOexecute: sendTransactionParams: " + JSON.stringify(sendTransactionParams))
+            transactionHash = await this.walletClient.sendTransaction(sendTransactionParams)
 
             opsToBundle.map(({ userOperationHash }) => {
                 this.eventManager.emitSubmitted(

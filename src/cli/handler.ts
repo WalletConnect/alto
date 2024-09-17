@@ -27,6 +27,7 @@ import { setupServer } from "./setupServer"
 import { PimlicoEntryPointSimulationsDeployBytecode } from "../types/contracts"
 import { UtilityWalletMonitor } from "../executor/utilityWalletMonitor"
 import { GasPriceManager } from "@alto/handlers"
+import { eip5792Actions } from "viem/experimental"
 
 const parseArgs = (args: IOptionsInput): IOptions => {
     // validate every arg, make type safe so if i add a new arg i have to validate it
@@ -138,6 +139,7 @@ export async function bundlerHandler(args: IOptionsInput): Promise<void> {
             account: parsedArgs["utility-private-key"]
         })
 
+        console.log("DOexecute: 444")
         const deployHash = await walletClient.deployContract({
             chain,
             abi: [],
@@ -200,7 +202,7 @@ export async function bundlerHandler(args: IOptionsInput): Promise<void> {
             }
         ),
         chain
-    })
+    }).extend(eip5792Actions())
 
     const senderManager = new SenderManager(
         parsedArgs["executor-private-keys"],

@@ -25,6 +25,7 @@ import {
     toPackedUserOperation
 } from "@alto/utils"
 import type { AbiFunction, Hex, RpcRequestErrorType } from "viem"
+import { RpcAuthorizationList } from "viem/experimental"
 import {
     type Address,
     type PublicClient,
@@ -40,6 +41,7 @@ import {
 import { z } from "zod"
 import { ExecuteSimulatorDeployedBytecode } from "./ExecuteSimulator"
 import { PimlicoEntryPointSimulationsAbi } from "@alto/types"
+import { userOperation7702 } from "./rpcHandler"
 
 function getStateOverrides({
     userOperation,
@@ -214,6 +216,7 @@ async function callPimlicoEntryPointSimulations(
     entryPointSimulationsAddress: Address,
     blockTagSupport: boolean,
     utilityWalletAddress: Address,
+    authorizationList: RpcAuthorizationList | undefined,
     stateOverride?: StateOverrides,
     fixedGasLimitForEstimation?: bigint
 ) {
@@ -222,11 +225,28 @@ async function callPimlicoEntryPointSimulations(
         functionName: "simulateEntryPoint",
         args: [entryPoint, entryPointSimulationsCallData]
     })
+    console.error("DOsimulate: callPimlicoEntryPointSimulations1: " + JSON.stringify(authorizationList))
+    console.error("entryPointSimulationsAddress: " + entryPointSimulationsAddress)
+    console.error("entryPoint: " + entryPoint)
+    console.error("eth_call params: " + JSON.stringify({
+        authorizationList,
+        to: entryPointSimulationsAddress,
+        from: utilityWalletAddress,
+        data: callData,
+        ...(fixedGasLimitForEstimation !== undefined && {
+            gas: `0x${fixedGasLimitForEstimation.toString(16)}`
+        })
+    }))
+    console.log("eth_call block: " + JSON.stringify(blockTagSupport
+        ? "latest"
+        : toHex(await publicClient.getBlockNumber())))
+    console.log("eth_call stateOverride: " + JSON.stringify([...(stateOverride ? [stateOverride] : [])]))
 
     const result = (await publicClient.request({
         method: "eth_call",
         params: [
             {
+                authorizationList,
                 to: entryPointSimulationsAddress,
                 from: utilityWalletAddress,
                 data: callData,
@@ -241,6 +261,7 @@ async function callPimlicoEntryPointSimulations(
             ...(stateOverride ? [stateOverride] : [])
         ]
     })) as Hex
+    console.error("DOsimulate: callPimlicoEntryPointSimulations1 result: " + JSON.stringify(result))
 
     const returnBytes = decodeAbiParameters(
         [{ name: "ret", type: "bytes[]" }],
@@ -252,6 +273,7 @@ async function callPimlicoEntryPointSimulations(
             abi: EntryPointV07Abi,
             data: data
         })
+        console.error("DOsimulate: callPimlicoEntryPointSimulations1 decodedDelegateAndError: " + JSON.stringify(decodedDelegateAndError))
 
         if (!decodedDelegateAndError?.args?.[1]) {
             throw new Error("Unexpected error")
@@ -534,6 +556,7 @@ export async function simulateHandleOpV07(
         ]
     })
 
+    const key = `${userOperation.sender}:${userOperation.nonce}:${userOperation.callData}`
     const cause = await callPimlicoEntryPointSimulations(
         publicClient,
         entryPoint,
@@ -544,6 +567,14 @@ export async function simulateHandleOpV07(
         entryPointSimulationsAddress,
         blockTagSupport,
         utilityWalletAddress,
+        userOperation7702.get(key)?.map((auth) => ({
+            address: auth.contractAddress,
+            chainId: toHex(auth.chainId),
+            nonce: toHex(auth.nonce),
+            yParity: auth.yParity,
+            r: auth.r,
+            s: auth.s,
+        })),
         finalParam,
         fixedGasLimitForEstimation
     )
@@ -573,6 +604,7 @@ export async function simulateHandleOpV07(
             }
         }
     } catch (e) {
+        console.error("DOsimulate: simulateHandleOpV07: " + e)
         return {
             result: "failed",
             data: "Unknown error, could not parse simulate handle op result.",

@@ -88,6 +88,17 @@ const userOperationV07Schema = z
             .nullable()
             .optional()
             .transform((val) => val ?? null),
+        // authorizationList: z.array(z.object({
+        //     contractAddress: addressSchema,
+        //     chainId: z.number(),
+        //     nonce: z.number(),
+        //     yParity: z.number(),
+        //     r: hexDataSchema,
+        //     s: hexDataSchema,
+        // }))
+        //     .nullable()
+        //     .optional()
+        //     .transform((val) => val ?? null),
         signature: hexDataSchema
     })
     .strict()
@@ -146,6 +157,17 @@ const partialUserOperationV07Schema = z
             .nullable()
             .optional()
             .transform((val) => val ?? null),
+        // authorizationList: z.array(z.object({
+        //     contractAddress: addressSchema,
+        //     chainId: z.number(),
+        //     nonce: z.number(),
+        //     yParity: z.number(),
+        //     r: hexDataSchema,
+        //     s: hexDataSchema,
+        // }))
+        //     .nullable()
+        //     .optional()
+        //     .transform((val) => val ?? null),
         signature: hexDataSchema
     })
     .strict()
@@ -161,6 +183,17 @@ const packerUserOperationSchema = z
         preVerificationGas: hexNumberSchema,
         gasFees: hexData32Schema,
         paymasterAndData: hexDataSchema,
+        // authorizationList: z.array(z.object({
+        //     contractAddress: addressSchema,
+        //     chainId: z.number(),
+        //     nonce: z.number(),
+        //     yParity: z.number(),
+        //     r: hexDataSchema,
+        //     s: hexDataSchema,
+        // }))
+        //     .nullable()
+        //     .optional()
+        //     .transform((val) => val ?? null),
         signature: hexDataSchema
     })
     .strict()
@@ -259,6 +292,21 @@ const sendUserOperationRequestSchema = z.object({
     params: z.tuple([userOperationSchema, addressSchema])
 })
 
+const prepareSendUserOperation7702RequestSchema = z.object({
+    method: z.literal("eth_prepareSendUserOperation7702"),
+    params: z.tuple([
+        z.string(),
+        z.array(z.object({
+            contractAddress: addressSchema,
+            chainId: z.number(),
+            nonce: z.number(),
+            yParity: z.number(),
+            r: hexDataSchema,
+            s: hexDataSchema,
+        }))
+    ])
+})
+
 const getUserOperationByHashRequestSchema = z.object({
     method: z.literal("eth_getUserOperationByHash"),
     params: z.tuple([
@@ -351,6 +399,7 @@ const bundlerRequestSchema = z.discriminatedUnion("method", [
     supportedEntryPointsRequestSchema,
     estimateUserOperationGasRequestSchema,
     sendUserOperationRequestSchema,
+    prepareSendUserOperation7702RequestSchema,
     getUserOperationByHashRequestSchema,
     getUserOperationReceiptRequestSchema,
     bundlerClearStateRequestSchema,
@@ -398,6 +447,11 @@ const estimateUserOperationGasResponseSchema = z.object({
 const sendUserOperationResponseSchema = z.object({
     method: z.literal("eth_sendUserOperation"),
     result: hexData32Schema
+})
+
+const prepareSendUserOperation7702ResponseSchema = z.object({
+    method: z.literal("eth_prepareSendUserOperation7702"),
+    result: z.boolean()
 })
 
 const getUserOperationByHashResponseSchema = z.object({
@@ -575,6 +629,7 @@ const bundlerResponseSchema = z.discriminatedUnion("method", [
     supportedEntryPointsResponseSchema,
     estimateUserOperationGasResponseSchema,
     sendUserOperationResponseSchema,
+    prepareSendUserOperation7702ResponseSchema,
     getUserOperationByHashResponseSchema,
     getUserOperationReceiptResponseSchema,
     bundlerClearStateResponseSchema,
